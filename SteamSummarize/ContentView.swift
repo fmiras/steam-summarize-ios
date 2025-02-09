@@ -25,7 +25,7 @@ struct ContentView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationSplitView {
             ZStack(alignment: .top) {
                 ScrollView {
                     VStack(spacing: 0) {
@@ -146,6 +146,10 @@ struct ContentView: View {
                     }
                 }
             }
+        } detail: {
+            NavigationStack {
+                EmptyStateView()
+            }
         }
     }
     
@@ -241,7 +245,6 @@ struct GameDetailView: View {
     @State private var reviewSummary: QuerySummary?
     @State private var isLoading = true
     @State private var errorMessage: String?
-    @State private var descriptionHeight: CGFloat = 200 // Default height
     @State private var gameSummary: GameSummary?
     @State private var isGeneratingSummary = false
     @State private var summaryError: String?
@@ -249,8 +252,8 @@ struct GameDetailView: View {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                if let gameDetails = gameDetails {
+            if let gameDetails = gameDetails {
+                VStack(spacing: 20) {
                     // Header Image
                     if let imageUrl = gameDetails.headerImage {
                         AsyncImage(url: URL(string: imageUrl)) { image in
@@ -260,14 +263,13 @@ struct GameDetailView: View {
                         } placeholder: {
                             ProgressView()
                         }
-                        .frame(height: 200)
+                        .frame(maxHeight: 300)
                         .cornerRadius(10)
                     }
                     
                     // Game Description
                     if let description = gameDetails.description {
                         ExpandableHTMLView(htmlContent: description)
-                            .padding(.horizontal)
                     }
                     
                     // Review Summary
@@ -275,55 +277,44 @@ struct GameDetailView: View {
                         ReviewSummaryView(summary: summary)
                     }
                     
-                    // New TabView section
+                    // TabView section
                     VStack(spacing: 16) {
-                        // Segmented control style tabs
-                        HStack {
-                            Picker("View Mode", selection: $selectedTab) {
-                                Text("Recent Reviews")
-                                    .tag(0)
-                                Text("Generate Summary")
-                                    .tag(1)
-                            }
-                            .pickerStyle(.segmented)
-                            .onChange(of: selectedTab) { oldValue, newValue in
-                                if newValue == 1 && gameSummary == nil && !isGeneratingSummary {
-                                    generateSummary()
-                                }
+                        Picker("View Mode", selection: $selectedTab) {
+                            Text("Recent Reviews").tag(0)
+                            Text("Generate Summary").tag(1)
+                        }
+                        .pickerStyle(.segmented)
+                        .onChange(of: selectedTab) { _, newValue in
+                            if newValue == 1 && gameSummary == nil && !isGeneratingSummary {
+                                generateSummary()
                             }
                         }
                         .padding(.horizontal)
-                        .foregroundColor(.blue)
                         
-                        // Content
                         if selectedTab == 0 {
                             ReviewsListView(reviews: reviews)
                                 .transition(.opacity)
                         } else {
-                            VStack {
-                                if let summary = gameSummary {
-                                    AISummaryView(summary: summary)
-                                } else if isGeneratingSummary {
-                                    SummaryLoadingView()
-                                        .padding(.vertical)
-                                } else if let error = summaryError {
-                                    Text(error)
-                                        .foregroundColor(.red)
-                                        .padding()
-                                }
+                            if let summary = gameSummary {
+                                AISummaryView(summary: summary)
+                            } else if isGeneratingSummary {
+                                SummaryLoadingView()
+                            } else if let error = summaryError {
+                                Text(error)
+                                    .foregroundColor(.red)
+                                    .padding()
                             }
-                            .transition(.opacity)
                         }
                     }
                     .animation(.easeInOut, value: selectedTab)
-                } else if isLoading {
-                    ProgressView()
-                        .padding()
-                } else if let error = errorMessage {
-                    Text(error)
-                        .foregroundColor(.red)
-                        .padding()
                 }
+                .frame(maxWidth: UIDevice.current.userInterfaceIdiom == .pad ? 700 : .infinity)
+                .padding(.horizontal, UIDevice.current.userInterfaceIdiom == .pad ? 20 : 0)
+            } else if isLoading {
+                ProgressView()
+            } else if let error = errorMessage {
+                Text(error)
+                    .foregroundColor(.red)
             }
         }
         .navigationTitle(game.name)
@@ -443,10 +434,6 @@ struct ReviewsListView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Recent Reviews")
-                .font(.headline)
-                .padding(.horizontal)
-            
             ForEach(displayedReviews) { review in
                 ReviewCell(review: review)
             }
