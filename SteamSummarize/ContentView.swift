@@ -13,10 +13,11 @@ struct ContentView: View {
     @State private var isSearchFocused = false
     
     let exampleGames = [
-        Game(id: 570, name: "Dota 2", imageURL: nil),
-        Game(id: 730, name: "Counter-Strike 2", imageURL: nil),
-        Game(id: 1172470, name: "Apex Legends", imageURL: nil),
-        Game(id: 578080, name: "PUBG: BATTLEGROUNDS", imageURL: nil)
+        Game(id: 1091500, name: "Cyberpunk 2077", imageURL: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1091500/capsule_231x87.jpg?t=1734434803"),
+        Game(id: 2322010, name: "God of War Ragnarök", imageURL: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2322010/capsule_231x87.jpg?t=1738256985"),
+        Game(id: 1245620, name: "ELDEN RING", imageURL: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1245620/capsule_231x87.jpg?t=1738690346"),
+        Game(id: 1888930, name: "The Last of Us™ Part I", imageURL: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1888930/capsule_231x87.jpg?t=1736371681"),
+        Game(id: 1174180, name: "Red Dead Redemption 2", imageURL: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/capsule_231x87.jpg?t=1720558643")
     ]
     
     var displayedGames: [Game] {
@@ -33,34 +34,16 @@ struct ContentView: View {
                 if searchText.isEmpty {
                     ScrollView {
                         VStack(spacing: 16) {
-                            // Suggested Section First
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Suggested")
+                            VStack(alignment: .leading, spacing: 16) {
+                                Text("Suggestions")
                                     .font(.title2)
                                     .fontWeight(.bold)
                                     .padding(.horizontal)
-                                    .padding(.top, 16)
+                                    .padding(.top, 20)
                                 
                                 ForEach(exampleGames) { game in
                                     NavigationLink(destination: GameDetailView(game: game)) {
-                                        HStack {
-                                            Image(systemName: "gamecontroller.fill")
-                                                .foregroundColor(.blue)
-                                                .font(.title2)
-                                                .frame(width: 30)
-                                            Text(game.name)
-                                                .font(.body)
-                                                .fontWeight(.medium)
-                                            Spacer()
-                                            Image(systemName: "chevron.right")
-                                                .foregroundColor(.gray)
-                                                .font(.caption)
-                                        }
-                                        .padding(.vertical, 8)
-                                        .padding(.horizontal)
-                                        .background(Color(.systemBackground))
-                                        .cornerRadius(10)
-                                        .shadow(color: Color(.systemGray5), radius: 2, x: 0, y: 1)
+                                        SuggestionButton(game: game)
                                     }
                                     .buttonStyle(PlainButtonStyle())
                                     .padding(.horizontal)
@@ -185,10 +168,10 @@ struct SearchBar: View {
                 TextField("Search games", text: $text)
                     .focused($isFocused)
                     .submitLabel(.search)
-                    .onChange(of: text) { _ in
+                    .onChange(of: text) { oldValue, newValue in
                         onSearch()
                     }
-                    .onChange(of: isFocused) { newValue in
+                    .onChange(of: isFocused) { oldValue, newValue in
                         isSearchFocused = newValue
                     }
                 
@@ -392,6 +375,52 @@ struct DismissKeyboardOnTap: ViewModifier {
 extension View {
     func dismissKeyboardOnTap() -> some View {
         modifier(DismissKeyboardOnTap())
+    }
+}
+
+// New SuggestionButton component with Apple-style design
+struct SuggestionButton: View {
+    let game: Game
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // Game Image
+            if let imageURL = game.imageURL {
+                AsyncImage(url: URL(string: imageURL)) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 92, height: 46)  // 2:1 aspect ratio for game banners
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } placeholder: {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(.systemGray6))
+                        .frame(width: 92, height: 46)
+                        .shimmer()  // Add shimmer effect while loading
+                }
+            }
+            
+            // Game Title
+            Text(game.name)
+                .font(.body)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
+                .lineLimit(1)
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(12)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color(.systemGray5), lineWidth: 1)
+        )
+        .shadow(color: Color(.systemGray4).opacity(0.3), radius: 3, x: 0, y: 1)
     }
 }
 
