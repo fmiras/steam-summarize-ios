@@ -372,102 +372,120 @@ struct GameDetailView: View {
     }
     
     private func fetchGameDetails() {
-        let urlString = "https://store.steampowered.com/api/appdetails/?appids=\(game.id)&l=english&cc=US"
-        guard let url = URL(string: urlString) else { return }
-        
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            DispatchQueue.main.async {
-                isLoading = false
-                
-                if let error = error {
-                    errorMessage = error.localizedDescription
-                    return
-                }
-                
-                guard let data = data else {
-                    errorMessage = "No data received"
-                    return
-                }
-                
-                do {
-                    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                    if let gameData = json?["\(game.id)"] as? [String: Any],
-                       let data = gameData["data"] as? [String: Any] {
-                        let jsonData = try JSONSerialization.data(withJSONObject: data)
-                        gameDetails = try JSONDecoder().decode(GameDetails.self, from: jsonData)
+        Task {
+            do {
+                // Check cache first
+                if let details = try? await CacheService.shared.retrieve(forKey: "game_details_\(game.id)") as GameDetails {
+                    await MainActor.run {
+                        self.gameDetails = details
+                        self.isLoading = false
                     }
-                } catch {
-                    errorMessage = "Failed to parse game details"
+                    return
+                }
+                
+                let urlString = "https://store.steampowered.com/api/appdetails/?appids=\(game.id)&l=english&cc=US"
+                guard let url = URL(string: urlString) else { return }
+                
+                let (data, _) = try await URLSession.shared.data(from: url)
+                
+                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                if let gameData = json?["\(game.id)"] as? [String: Any],
+                   let detailsData = gameData["data"] as? [String: Any] {
+                    let jsonData = try JSONSerialization.data(withJSONObject: detailsData)
+                    let details = try JSONDecoder().decode(GameDetails.self, from: jsonData)
+                    
+                    // Cache the response
+                    try await CacheService.shared.cache(details, forKey: "game_details_\(game.id)")
+                    
+                    await MainActor.run {
+                        self.gameDetails = details
+                        self.isLoading = false
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    self.errorMessage = error.localizedDescription
+                    self.isLoading = false
                 }
             }
-        }.resume()
+        }
     }
     
     private func fetchGameReviews() {
-        let urlString = "https://store.steampowered.com/appreviews/\(game.id)?json=1&language=english"
-        guard let url = URL(string: urlString) else { return }
-        
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    errorMessage = error.localizedDescription
+        Task {
+            do {
+                // Check cache first
+                if let cachedResponse = try? await CacheService.shared.retrieve(forKey: "game_reviews_\(game.id)") as ReviewsResponse {
+                    self.reviews = cachedResponse.reviews
+                    self.reviewSummary = cachedResponse.querySummary
                     return
                 }
                 
-                guard let data = data else {
-                    errorMessage = "No review data received"
-                    return
-                }
+                let urlString = "https://store.steampowered.com/appreviews/\(game.id)?json=1&language=english"
+                guard let url = URL(string: urlString) else { return }
                 
-                do {
-                    let response = try JSONDecoder().decode(ReviewsResponse.self, from: data)
-                    reviews = response.reviews
-                    reviewSummary = response.querySummary
-                } catch {
-                    errorMessage = "Failed to parse reviews"
+                let (data, _) = try await URLSession.shared.data(from: url)
+                let response = try JSONDecoder().decode(ReviewsResponse.self, from: data)
+                
+                // Cache the response
+                try await CacheService.shared.cache(response, forKey: "game_reviews_\(game.id)")
+                
+                await MainActor.run {
+                    self.reviews = response.reviews
+                    self.reviewSummary = response.querySummary
+                }
+            } catch {
+                await MainActor.run {
+                    self.errorMessage = error.localizedDescription
                 }
             }
-        }.resume()
+        }
     }
     
     private func generateSummary() {
-        isGeneratingSummary = true
-        summaryError = nil
-        
-        guard let url = URL(string: "https://steamsummarize.com/api/summarize") else {
-            summaryError = "Invalid URL"
-            isGeneratingSummary = false
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        let body = ["game_id": String(game.id)]
-        request.httpBody = try? JSONEncoder().encode(body)
-        
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            DispatchQueue.main.async {
-                isGeneratingSummary = false
-                
-                if let error = error {
-                    summaryError = error.localizedDescription
+        Task {
+            do {
+                // Check cache first
+                if let cachedSummary = try? await CacheService.shared.retrieve(forKey: "game_summary_\(game.id)") as GameSummary {
+                    await MainActor.run {
+                        self.gameSummary = cachedSummary
+                    }
                     return
                 }
                 
-                guard let data = data else {
-                    summaryError = "No data received"
-                    return
+                await MainActor.run {
+                    isGeneratingSummary = true
+                    summaryError = nil
                 }
                 
-                do {
-                    gameSummary = try JSONDecoder().decode(GameSummary.self, from: data)
-                } catch {
-                    summaryError = "Failed to parse summary"
+                guard let url = URL(string: "https://steamsummarize.com/api/summarize") else {
+                    throw URLError(.badURL)
+                }
+                
+                var request = URLRequest(url: url)
+                request.httpMethod = "POST"
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                
+                let body = ["game_id": String(game.id)]
+                request.httpBody = try JSONEncoder().encode(body)
+                
+                let (data, _) = try await URLSession.shared.data(for: request)
+                let summary = try JSONDecoder().decode(GameSummary.self, from: data)
+                
+                // Cache the response
+                try await CacheService.shared.cache(summary, forKey: "game_summary_\(game.id)")
+                
+                await MainActor.run {
+                    self.gameSummary = summary
+                    self.isGeneratingSummary = false
+                }
+            } catch {
+                await MainActor.run {
+                    self.summaryError = error.localizedDescription
+                    self.isGeneratingSummary = false
                 }
             }
-        }.resume()
+        }
     }
 }
 
