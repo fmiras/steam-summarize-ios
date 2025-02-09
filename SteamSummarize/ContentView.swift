@@ -3,7 +3,6 @@ import SwiftUI
 struct Game: Identifiable {
     let id: Int
     let name: String
-    let price: String?
     let imageURL: String?
 }
 
@@ -14,10 +13,10 @@ struct ContentView: View {
     @State private var isSearchFocused = false
     
     let exampleGames = [
-        Game(id: 570, name: "Dota 2", price: "Free", imageURL: nil),
-        Game(id: 730, name: "Counter-Strike 2", price: "Free", imageURL: nil),
-        Game(id: 1172470, name: "Apex Legends", price: "Free", imageURL: nil),
-        Game(id: 578080, name: "PUBG: BATTLEGROUNDS", price: "Free", imageURL: nil)
+        Game(id: 570, name: "Dota 2", imageURL: nil),
+        Game(id: 730, name: "Counter-Strike 2", imageURL: nil),
+        Game(id: 1172470, name: "Apex Legends", imageURL: nil),
+        Game(id: 578080, name: "PUBG: BATTLEGROUNDS", imageURL: nil)
     ]
     
     var displayedGames: [Game] {
@@ -109,12 +108,6 @@ struct ContentView: View {
                                                 .foregroundColor(.primary)
                                                 .lineLimit(2)
                                                 .fixedSize(horizontal: false, vertical: true)
-                                            
-                                            if let price = game.price {
-                                                Text(price)
-                                                    .font(.subheadline)
-                                                    .foregroundColor(.secondary)
-                                            }
                                         }
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                         
@@ -162,7 +155,6 @@ struct ContentView: View {
                                 return Game(
                                     id: id,
                                     name: name,
-                                    price: (item["final_formatted"] as? String) ?? "N/A",
                                     imageURL: item["tiny_image"] as? String
                                 )
                             }

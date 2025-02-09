@@ -195,7 +195,6 @@ struct CategoryGamesView: View {
                             return Game(
                                 id: id,
                                 name: name,
-                                price: (item["final_formatted"] as? String) ?? "N/A",
                                 imageURL: item["tiny_image"] as? String
                             )
                         }
@@ -236,12 +235,6 @@ struct GameRow: View {
                 Text(game.name)
                     .font(.body)
                     .foregroundColor(.primary)
-                
-                if let price = game.price {
-                    Text(price)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
             }
             
             Spacer()
