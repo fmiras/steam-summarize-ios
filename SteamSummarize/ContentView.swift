@@ -245,6 +245,7 @@ struct GameDetailView: View {
     @State private var gameSummary: GameSummary?
     @State private var isGeneratingSummary = false
     @State private var summaryError: String?
+    @State private var selectedTab = 0
     
     var body: some View {
         ScrollView {
@@ -274,43 +275,47 @@ struct GameDetailView: View {
                         ReviewSummaryView(summary: summary)
                     }
                     
-                    // Reviews List
-                    ReviewsListView(reviews: reviews)
-                    
-                    // AI Summary
-                    if let summary = gameSummary {
-                        AISummaryView(summary: summary)
-                    } else {
-                        // Show generate button if we don't have a summary yet
-                        if !isGeneratingSummary {
-                            Button(action: generateSummary) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "sparkles")
-                                    Text("Generate AI Summary")
-                                }
-                                .font(.system(.body, design: .rounded, weight: .medium))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 12)
-                                .background(
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [Color.blue, Color.purple]),
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                                .clipShape(Capsule())
-                                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+                    // New TabView section
+                    VStack(spacing: 16) {
+                        // Segmented control style tabs
+                        HStack {
+                            Picker("View Mode", selection: $selectedTab) {
+                                Text("Recent Reviews")
+                                    .tag(0)
+                                Text("Generate Summary")
+                                    .tag(1)
                             }
-                            .buttonStyle(ScaleButtonStyle())
-                            .padding(.vertical)
+                            .pickerStyle(.segmented)
+                            .onChange(of: selectedTab) { oldValue, newValue in
+                                if newValue == 1 && gameSummary == nil && !isGeneratingSummary {
+                                    generateSummary()
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                        .foregroundColor(.blue)
+                        
+                        // Content
+                        if selectedTab == 0 {
+                            ReviewsListView(reviews: reviews)
+                                .transition(.opacity)
                         } else {
-                            // Show loading animation
-                            SummaryLoadingView()
-                                .padding(.vertical)
+                            VStack {
+                                if let summary = gameSummary {
+                                    AISummaryView(summary: summary)
+                                } else if isGeneratingSummary {
+                                    SummaryLoadingView()
+                                        .padding(.vertical)
+                                } else if let error = summaryError {
+                                    Text(error)
+                                        .foregroundColor(.red)
+                                        .padding()
+                                }
+                            }
+                            .transition(.opacity)
                         }
                     }
-                    
+                    .animation(.easeInOut, value: selectedTab)
                 } else if isLoading {
                     ProgressView()
                         .padding()
@@ -430,6 +435,11 @@ struct GameDetailView: View {
 
 struct ReviewsListView: View {
     let reviews: [Review]
+    @State private var isExpanded = false
+    
+    var displayedReviews: [Review] {
+        isExpanded ? reviews : Array(reviews.prefix(3))
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -437,8 +447,31 @@ struct ReviewsListView: View {
                 .font(.headline)
                 .padding(.horizontal)
             
-            ForEach(reviews) { review in
+            ForEach(displayedReviews) { review in
                 ReviewCell(review: review)
+            }
+            
+            if reviews.count > 3 {
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        withAnimation {
+                            isExpanded.toggle()
+                        }
+                    }) {
+                        HStack {
+                            Text(isExpanded ? "Show Less" : "Show More")
+                                .font(.system(.body, design: .rounded))
+                                .foregroundColor(.blue)
+                            
+                            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                                .font(.caption)
+                                .foregroundColor(.blue)
+                        }
+                        .padding(.vertical, 8)
+                    }
+                }
+                .padding(.horizontal)
             }
         }
     }
