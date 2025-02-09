@@ -26,93 +26,120 @@ struct ContentView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                SearchBar(text: $searchText, onSearch: fetchGames, isSearchFocused: $isSearchFocused)
-                    .padding(.horizontal)
-                    .padding(.top, 8)
-                
-                if searchText.isEmpty {
-                    ScrollView {
-                        VStack(spacing: 16) {
-                            VStack(alignment: .leading, spacing: 16) {
-                                Text("Suggestions")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                    .padding(.horizontal)
-                                    .padding(.top, 20)
-                                
-                                ForEach(exampleGames) { game in
-                                    NavigationLink(destination: GameDetailView(game: game)) {
-                                        SuggestionButton(game: game)
-                                    }
-                                    .buttonStyle(PlainButtonStyle())
-                                    .padding(.horizontal)
-                                }
-                            }
-                            // Browse Section Second
-                            BrowseView()
-                                .padding(.top, 16)
-                        }
-                    }
-                } else {
-                    // Search Results
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(games) { game in
-                                NavigationLink(destination: GameDetailView(game: game)) {
-                                    HStack(spacing: 12) {
-                                        // Game Image
-                                        if let imageURL = game.imageURL {
-                                            AsyncImage(url: URL(string: imageURL)) { image in
-                                                image
-                                                    .resizable()
-                                                    .aspectRatio(contentMode: .fill)
-                                                    .frame(width: 60, height: 60)
-                                                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                                            } placeholder: {
-                                                Color(.systemGray6)
-                                                    .frame(width: 60, height: 60)
-                                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            ZStack(alignment: .top) {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        // Add spacing to account for the sticky header
+                        Color.clear.frame(height: 60)
+                        
+                        if searchText.isEmpty {
+                            // Suggestions content
+                            ScrollView {
+                                VStack(spacing: 16) {
+                                    VStack(alignment: .leading, spacing: 16) {
+                                        Text("Suggestions")
+                                            .font(.title2)
+                                            .fontWeight(.bold)
+                                            .padding(.horizontal)
+                                            .padding(.top, 20)
+                                        
+                                        ForEach(exampleGames) { game in
+                                            NavigationLink(destination: GameDetailView(game: game)) {
+                                                SuggestionButton(game: game)
                                             }
-                                        } else {
-                                            Image(systemName: "gamecontroller.fill")
-                                                .foregroundColor(.blue)
-                                                .font(.title2)
-                                                .frame(width: 60, height: 60)
-                                                .background(Color(.systemGray6))
-                                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            .buttonStyle(PlainButtonStyle())
+                                            .padding(.horizontal)
                                         }
-                                        
-                                        // Game Info
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(game.name)
-                                                .font(.body)
-                                                .fontWeight(.medium)
-                                                .foregroundColor(.primary)
-                                                .lineLimit(2)
-                                                .fixedSize(horizontal: false, vertical: true)
-                                        }
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        
-                                        Image(systemName: "chevron.right")
-                                            .foregroundColor(.gray)
-                                            .font(.caption)
                                     }
-                                    .padding(12)
-                                    .background(Color(.systemBackground))
-                                    .cornerRadius(12)
-                                    .shadow(color: Color(.systemGray5), radius: 2, x: 0, y: 1)
+                                    
+                                    BrowseView()
+                                        .padding(.top, 16)
                                 }
-                                .buttonStyle(PlainButtonStyle())
-                                .padding(.horizontal)
                             }
+                        } else {
+                            // Search Results content
+                            ScrollView {
+                                LazyVStack(spacing: 12) {
+                                    ForEach(games) { game in
+                                        NavigationLink(destination: GameDetailView(game: game)) {
+                                            HStack(spacing: 12) {
+                                                // Game Image
+                                                if let imageURL = game.imageURL {
+                                                    AsyncImage(url: URL(string: imageURL)) { image in
+                                                        image
+                                                            .resizable()
+                                                            .aspectRatio(contentMode: .fill)
+                                                            .frame(width: 60, height: 60)
+                                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                                    } placeholder: {
+                                                        Color(.systemGray6)
+                                                            .frame(width: 60, height: 60)
+                                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                                    }
+                                                } else {
+                                                    Image(systemName: "gamecontroller.fill")
+                                                        .foregroundColor(.blue)
+                                                        .font(.title2)
+                                                        .frame(width: 60, height: 60)
+                                                        .background(Color(.systemGray6))
+                                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                                }
+                                                
+                                                // Game Info
+                                                VStack(alignment: .leading, spacing: 4) {
+                                                    Text(game.name)
+                                                        .font(.body)
+                                                        .fontWeight(.medium)
+                                                        .foregroundColor(.primary)
+                                                        .lineLimit(2)
+                                                        .fixedSize(horizontal: false, vertical: true)
+                                                }
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                                
+                                                Image(systemName: "chevron.right")
+                                                    .foregroundColor(.gray)
+                                                    .font(.caption)
+                                            }
+                                            .padding(12)
+                                            .background(Color(.systemBackground))
+                                            .cornerRadius(12)
+                                            .shadow(color: Color(.systemGray5), radius: 2, x: 0, y: 1)
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                        .padding(.horizontal)
+                                    }
+                                }
+                                .padding(.vertical, 8)
+                            }
+                            .dismissKeyboardOnTap()
                         }
-                        .padding(.vertical, 8)
                     }
-                    .dismissKeyboardOnTap()
+                }
+                
+                // Sticky Header
+                VStack(spacing: 0) {
+                    // Background blur for the header
+                    Color.clear
+                        .background(.ultraThinMaterial)
+                        .frame(height: 60)
+                        .overlay(
+                            SearchBar(text: $searchText, onSearch: fetchGames, isSearchFocused: $isSearchFocused)
+                                .padding(.horizontal)
+                                .padding(.bottom, 8)
+                        )
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    if !isSearchFocused {
+                        Text("Steam Summarize")
+                            .font(.headline)
+                            .opacity(1.0)
+                    }
                 }
             }
-            .navigationTitle(isSearchFocused ? "" : "Steam Summarize")
         }
     }
     
@@ -186,7 +213,7 @@ struct SearchBar: View {
                 }
             }
             .padding(.vertical, 8)
-            .background(Color(.systemGray6).opacity(0.95))
+            .background(Color(.systemGray6))
             .cornerRadius(10)
             
             if isFocused {
