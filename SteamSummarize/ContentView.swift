@@ -384,6 +384,7 @@ struct ReviewCell: View {
             Text(review.review)
                 .font(.body)
                 .lineLimit(3)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding()
         .background(Color(.systemGray6))
