@@ -9,6 +9,17 @@ struct ContentView: View {
     @State private var searchText = ""
     @State private var games: [Game] = []
     
+    let exampleGames = [
+        Game(id: 570, name: "Dota 2"),
+        Game(id: 730, name: "Counter-Strike 2"),
+        Game(id: 1172470, name: "Apex Legends"),
+        Game(id: 578080, name: "PUBG: BATTLEGROUNDS")
+    ]
+    
+    var displayedGames: [Game] {
+        searchText.isEmpty ? exampleGames : games
+    }
+    
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
@@ -20,15 +31,52 @@ struct ContentView: View {
                 SearchBar(text: $searchText, onSearch: fetchGames)
                     .padding(.horizontal)
                 
-                List(games) { game in
-                    NavigationLink(destination: GameDetailView(game: game)) {
-                        Text(game.name)
-                            .font(.body)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding()
+                if searchText.isEmpty {
+                    
+                    VStack(alignment: .leading) {
+                        Text("Suggested")
+                            .font(.headline)
+                            .padding(.horizontal)
+                        
+                        ForEach(exampleGames) { game in
+                            NavigationLink(destination: GameDetailView(game: game)) {
+                                HStack {
+                                    Image(systemName: "gamecontroller.fill")
+                                        .foregroundColor(.blue)
+                                        .font(.title2)
+                                        .frame(width: 30)
+                                    
+                                    Text(game.name)
+                                        .font(.body)
+                                        .fontWeight(.medium)
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: "chevron.right")
+                                        .foregroundColor(.gray)
+                                        .font(.caption)
+                                }
+                                .padding()
+                                .background(Color(.systemBackground))
+                                .cornerRadius(10)
+                                .shadow(color: Color(.systemGray5), radius: 2, x: 0, y: 1)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .padding(.horizontal)
+                        }
                     }
+                } else {
+                    // Search Results
+                    List(games) { game in
+                        NavigationLink(destination: GameDetailView(game: game)) {
+                            Text(game.name)
+                                .font(.body)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.vertical, 8)
+                        }
+                    }
+                    .listStyle(PlainListStyle())
                 }
-                .listStyle(PlainListStyle())
                 
                 Spacer()
             }
@@ -96,6 +144,7 @@ struct GameDetailView: View {
     @State private var reviewSummary: QuerySummary?
     @State private var isLoading = true
     @State private var errorMessage: String?
+    @State private var descriptionHeight: CGFloat = 200 // Default height
     
     var body: some View {
         ScrollView {
@@ -116,8 +165,7 @@ struct GameDetailView: View {
                     
                     // Game Description
                     if let description = gameDetails.description {
-                        Text(description)
-                            .font(.body)
+                        ExpandableHTMLView(htmlContent: description)
                             .padding(.horizontal)
                     }
                     
@@ -203,42 +251,6 @@ struct GameDetailView: View {
                 }
             }
         }.resume()
-    }
-}
-
-struct ReviewSummaryView: View {
-    let summary: QuerySummary
-    
-    var body: some View {
-        VStack(spacing: 10) {
-            Text("Review Summary")
-                .font(.headline)
-            
-            HStack {
-                VStack {
-                    Text("\(summary.totalPositive)")
-                        .font(.title2)
-                        .foregroundColor(.green)
-                    Text("Positive")
-                        .font(.caption)
-                }
-                
-                Divider()
-                    .frame(height: 40)
-                
-                VStack {
-                    Text("\(summary.totalNegative)")
-                        .font(.title2)
-                        .foregroundColor(.red)
-                    Text("Negative")
-                        .font(.caption)
-                }
-            }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
-        }
-        .padding()
     }
 }
 
