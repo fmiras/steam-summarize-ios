@@ -43,12 +43,18 @@ struct ContentView: View {
                                             .padding(.horizontal)
                                             .padding(.top, 20)
                                         
-                                        ForEach(exampleGames) { game in
-                                            NavigationLink(destination: GameDetailView(game: game)) {
-                                                SuggestionButton(game: game)
+                                        VStack(spacing: 0) {
+                                            ForEach(exampleGames) { game in
+                                                NavigationLink(destination: GameDetailView(game: game)) {
+                                                    SuggestionButton(game: game)
+                                                }
+                                                .buttonStyle(PlainButtonStyle())
+                                                
+                                                if game.id != exampleGames.last?.id {
+                                                    Divider()
+                                                        .padding(.leading, 120)
+                                                }
                                             }
-                                            .buttonStyle(PlainButtonStyle())
-                                            .padding(.horizontal)
                                         }
                                     }
                                     
@@ -417,20 +423,18 @@ struct SuggestionButton: View {
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(width: 92, height: 46)  // 2:1 aspect ratio for game banners
+                        .frame(width: 92, height: 46)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 } placeholder: {
                     RoundedRectangle(cornerRadius: 8)
                         .fill(Color(.systemGray6))
                         .frame(width: 92, height: 46)
-                        .shimmer()  // Add shimmer effect while loading
                 }
             }
             
             // Game Title
             Text(game.name)
                 .font(.body)
-                .fontWeight(.medium)
                 .foregroundColor(.primary)
                 .lineLimit(1)
             
@@ -440,14 +444,10 @@ struct SuggestionButton: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
-        .padding(12)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 16)
         .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color(.systemGray5), lineWidth: 1)
-        )
-        .shadow(color: Color(.systemGray4).opacity(0.3), radius: 3, x: 0, y: 1)
+        .contentShape(Rectangle()) // Makes the entire row tappable
     }
 }
 
