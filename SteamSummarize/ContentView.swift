@@ -3,17 +3,21 @@ import SwiftUI
 struct Game: Identifiable {
     let id: Int
     let name: String
+    let price: String?
+    let imageURL: String?
 }
 
 struct ContentView: View {
     @State private var searchText = ""
     @State private var games: [Game] = []
+    @State private var selectedTab = 0
+    @State private var isSearchFocused = false
     
     let exampleGames = [
-        Game(id: 570, name: "Dota 2"),
-        Game(id: 730, name: "Counter-Strike 2"),
-        Game(id: 1172470, name: "Apex Legends"),
-        Game(id: 578080, name: "PUBG: BATTLEGROUNDS")
+        Game(id: 570, name: "Dota 2", price: "Free", imageURL: nil),
+        Game(id: 730, name: "Counter-Strike 2", price: "Free", imageURL: nil),
+        Game(id: 1172470, name: "Apex Legends", price: "Free", imageURL: nil),
+        Game(id: 578080, name: "PUBG: BATTLEGROUNDS", price: "Free", imageURL: nil)
     ]
     
     var displayedGames: [Game] {
@@ -22,65 +26,117 @@ struct ContentView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 20) {
-                Text("Steam Summarize")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .padding(.top)
-                
-                SearchBar(text: $searchText, onSearch: fetchGames)
+            VStack(spacing: 0) {
+                SearchBar(text: $searchText, onSearch: fetchGames, isSearchFocused: $isSearchFocused)
                     .padding(.horizontal)
+                    .padding(.top, 8)
                 
                 if searchText.isEmpty {
-                    
-                    VStack(alignment: .leading) {
-                        Text("Suggested")
-                            .font(.headline)
-                            .padding(.horizontal)
-                        
-                        ForEach(exampleGames) { game in
-                            NavigationLink(destination: GameDetailView(game: game)) {
-                                HStack {
-                                    Image(systemName: "gamecontroller.fill")
-                                        .foregroundColor(.blue)
-                                        .font(.title2)
-                                        .frame(width: 30)
-                                    
-                                    Text(game.name)
-                                        .font(.body)
-                                        .fontWeight(.medium)
-                                    
-                                    Spacer()
-                                    
-                                    Image(systemName: "chevron.right")
-                                        .foregroundColor(.gray)
-                                        .font(.caption)
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            // Suggested Section First
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Suggested")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                    .padding(.horizontal)
+                                    .padding(.top, 16)
+                                
+                                ForEach(exampleGames) { game in
+                                    NavigationLink(destination: GameDetailView(game: game)) {
+                                        HStack {
+                                            Image(systemName: "gamecontroller.fill")
+                                                .foregroundColor(.blue)
+                                                .font(.title2)
+                                                .frame(width: 30)
+                                            Text(game.name)
+                                                .font(.body)
+                                                .fontWeight(.medium)
+                                            Spacer()
+                                            Image(systemName: "chevron.right")
+                                                .foregroundColor(.gray)
+                                                .font(.caption)
+                                        }
+                                        .padding(.vertical, 8)
+                                        .padding(.horizontal)
+                                        .background(Color(.systemBackground))
+                                        .cornerRadius(10)
+                                        .shadow(color: Color(.systemGray5), radius: 2, x: 0, y: 1)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                    .padding(.horizontal)
                                 }
-                                .padding()
-                                .background(Color(.systemBackground))
-                                .cornerRadius(10)
-                                .shadow(color: Color(.systemGray5), radius: 2, x: 0, y: 1)
                             }
-                            .buttonStyle(PlainButtonStyle())
-                            .padding(.horizontal)
+                            // Browse Section Second
+                            BrowseView()
+                                .padding(.top, 16)
                         }
                     }
                 } else {
                     // Search Results
-                    List(games) { game in
-                        NavigationLink(destination: GameDetailView(game: game)) {
-                            Text(game.name)
-                                .font(.body)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.vertical, 8)
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(games) { game in
+                                NavigationLink(destination: GameDetailView(game: game)) {
+                                    HStack(spacing: 12) {
+                                        // Game Image
+                                        if let imageURL = game.imageURL {
+                                            AsyncImage(url: URL(string: imageURL)) { image in
+                                                image
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fill)
+                                                    .frame(width: 60, height: 60)
+                                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            } placeholder: {
+                                                Color(.systemGray6)
+                                                    .frame(width: 60, height: 60)
+                                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            }
+                                        } else {
+                                            Image(systemName: "gamecontroller.fill")
+                                                .foregroundColor(.blue)
+                                                .font(.title2)
+                                                .frame(width: 60, height: 60)
+                                                .background(Color(.systemGray6))
+                                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                        }
+                                        
+                                        // Game Info
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(game.name)
+                                                .font(.body)
+                                                .fontWeight(.medium)
+                                                .foregroundColor(.primary)
+                                                .lineLimit(2)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                            
+                                            if let price = game.price {
+                                                Text(price)
+                                                    .font(.subheadline)
+                                                    .foregroundColor(.secondary)
+                                            }
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        
+                                        Image(systemName: "chevron.right")
+                                            .foregroundColor(.gray)
+                                            .font(.caption)
+                                    }
+                                    .padding(12)
+                                    .background(Color(.systemBackground))
+                                    .cornerRadius(12)
+                                    .shadow(color: Color(.systemGray5), radius: 2, x: 0, y: 1)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                .padding(.horizontal)
+                            }
                         }
+                        .padding(.vertical, 8)
                     }
-                    .listStyle(PlainListStyle())
+                    .dismissKeyboardOnTap()
                 }
-                
-                Spacer()
             }
-            .padding()
+            .navigationTitle(isSearchFocused ? "" : "Steam Summarize")
         }
     }
     
@@ -91,7 +147,6 @@ struct ContentView: View {
         }
         
         let urlString = "https://store.steampowered.com/api/storesearch/?term=\(searchText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&l=english&cc=US"
-        
         guard let url = URL(string: urlString) else { return }
         
         URLSession.shared.dataTask(with: url) { data, response, error in
@@ -102,8 +157,14 @@ struct ContentView: View {
                    let items = json["items"] as? [[String: Any]] {
                     DispatchQueue.main.async {
                         self.games = items.compactMap { item in
-                            if let id = item["id"] as? Int, let name = item["name"] as? String {
-                                return Game(id: id, name: name)
+                            if let id = item["id"] as? Int,
+                               let name = item["name"] as? String {
+                                return Game(
+                                    id: id,
+                                    name: name,
+                                    price: (item["final_formatted"] as? String) ?? "N/A",
+                                    imageURL: item["tiny_image"] as? String
+                                )
                             }
                             return nil
                         }
@@ -119,21 +180,49 @@ struct ContentView: View {
 struct SearchBar: View {
     @Binding var text: String
     var onSearch: () -> Void
+    @Binding var isSearchFocused: Bool
+    @FocusState private var isFocused: Bool
     
     var body: some View {
         HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(.gray)
-                .padding(.leading, 8)
-            TextField("Search games", text: $text)
-                .padding(8)
-                .onChange(of: text) { _ in
-                    onSearch()
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.gray)
+                    .padding(.leading, 8)
+                
+                TextField("Search games", text: $text)
+                    .focused($isFocused)
+                    .submitLabel(.search)
+                    .onChange(of: text) { _ in
+                        onSearch()
+                    }
+                    .onChange(of: isFocused) { newValue in
+                        isSearchFocused = newValue
+                    }
+                
+                if !text.isEmpty {
+                    Button(action: {
+                        text = ""
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.gray)
+                    }
+                    .padding(.trailing, 8)
                 }
+            }
+            .padding(.vertical, 8)
+            .background(Color(.systemGray6).opacity(0.95))
+            .cornerRadius(10)
+            
+            if isFocused {
+                Button("Cancel") {
+                    text = ""
+                    isFocused = false
+                }
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
         }
-        .background(Color(.systemGray5))
-        .cornerRadius(10)
-        .padding(.vertical, 10)
+        .animation(.default, value: isFocused)
     }
 }
 
@@ -292,6 +381,25 @@ struct ReviewCell: View {
         .background(Color(.systemGray6))
         .cornerRadius(10)
         .padding(.horizontal)
+    }
+}
+
+struct DismissKeyboardOnTap: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .contentShape(Rectangle())  // Makes entire area tappable
+            .onTapGesture {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
+                                             to: nil,
+                                             from: nil,
+                                             for: nil)
+            }
+    }
+}
+
+extension View {
+    func dismissKeyboardOnTap() -> some View {
+        modifier(DismissKeyboardOnTap())
     }
 }
 
