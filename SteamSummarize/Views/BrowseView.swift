@@ -26,31 +26,17 @@ struct BrowseView: View {
             isEnabled: false
         ),
         GameCategory(
-            name: "Action",
-            icon: "bolt.fill",
-            color: Color.orange,
-            searchTerm: "action",
-            isEnabled: false
-        ),
-        GameCategory(
-            name: "RPG",
-            icon: "wand.and.stars",
+            name: "4 Player Local",
+            icon: "person.3.fill",
             color: Color.purple,
-            searchTerm: "rpg",
+            searchTerm: "4-player-local",
             isEnabled: false
         ),
         GameCategory(
-            name: "Strategy",
-            icon: "brain.head.profile",
-            color: Color.indigo,
-            searchTerm: "strategy",
-            isEnabled: false
-        ),
-        GameCategory(
-            name: "Sports",
-            icon: "sportscourt.fill",
-            color: Color.teal,
-            searchTerm: "sports",
+            name: "LAN Party",
+            icon: "network.badge.shield.half.filled",
+            color: Color.orange,
+            searchTerm: "lan-party",
             isEnabled: false
         )
     ]
