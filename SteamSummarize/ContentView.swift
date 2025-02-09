@@ -242,6 +242,9 @@ struct GameDetailView: View {
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var descriptionHeight: CGFloat = 200 // Default height
+    @State private var gameSummary: GameSummary?
+    @State private var isGeneratingSummary = false
+    @State private var summaryError: String?
     
     var body: some View {
         ScrollView {
@@ -273,6 +276,40 @@ struct GameDetailView: View {
                     
                     // Reviews List
                     ReviewsListView(reviews: reviews)
+                    
+                    // AI Summary
+                    if let summary = gameSummary {
+                        AISummaryView(summary: summary)
+                    } else {
+                        // Show generate button if we don't have a summary yet
+                        if !isGeneratingSummary {
+                            Button(action: generateSummary) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "sparkles")
+                                    Text("Generate AI Summary")
+                                }
+                                .font(.system(.body, design: .rounded, weight: .medium))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 12)
+                                .background(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [Color.blue, Color.purple]),
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .clipShape(Capsule())
+                                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+                            }
+                            .buttonStyle(ScaleButtonStyle())
+                            .padding(.vertical)
+                        } else {
+                            // Show loading animation
+                            SummaryLoadingView()
+                                .padding(.vertical)
+                        }
+                    }
                     
                 } else if isLoading {
                     ProgressView()
@@ -345,6 +382,46 @@ struct GameDetailView: View {
                     reviewSummary = response.querySummary
                 } catch {
                     errorMessage = "Failed to parse reviews"
+                }
+            }
+        }.resume()
+    }
+    
+    private func generateSummary() {
+        isGeneratingSummary = true
+        summaryError = nil
+        
+        guard let url = URL(string: "https://steamsummarize.com/api/summarize") else {
+            summaryError = "Invalid URL"
+            isGeneratingSummary = false
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body = ["game_id": String(game.id)]
+        request.httpBody = try? JSONEncoder().encode(body)
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                isGeneratingSummary = false
+                
+                if let error = error {
+                    summaryError = error.localizedDescription
+                    return
+                }
+                
+                guard let data = data else {
+                    summaryError = "No data received"
+                    return
+                }
+                
+                do {
+                    gameSummary = try JSONDecoder().decode(GameSummary.self, from: data)
+                } catch {
+                    summaryError = "Failed to parse summary"
                 }
             }
         }.resume()
