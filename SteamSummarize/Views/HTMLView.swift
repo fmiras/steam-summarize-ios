@@ -201,7 +201,7 @@ struct ExpandableHTMLView: View {
                     .background(Color(.systemGray6))
                     .clipShape(Capsule())
                 }
-                .padding(.top, isExpanded ? 0 : -20)
+                .padding(.top, isExpanded ? 16 : -20)
                 .padding(.bottom, isExpanded ? 16 : 0)
                 .frame(maxWidth: .infinity)
                 .buttonStyle(ScaleButtonStyle())
