@@ -310,11 +310,58 @@ struct GameDetailView: View {
                 }
                 .frame(maxWidth: UIDevice.current.userInterfaceIdiom == .pad ? 700 : .infinity)
                 .padding(.horizontal, UIDevice.current.userInterfaceIdiom == .pad ? 20 : 0)
-            } else if isLoading {
-                ProgressView()
-            } else if let error = errorMessage {
-                Text(error)
-                    .foregroundColor(.red)
+            } else {
+                // Replace the ProgressView with a skeleton loader
+                VStack(spacing: 20) {
+                    // Header Image Skeleton
+                    Rectangle()
+                        .fill(Color(.systemGray6))
+                        .frame(height: 200)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .shimmer()
+                    
+                    // Description Skeleton
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            Rectangle()
+                                .fill(Color(.systemGray6))
+                                .frame(height: 16)
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                .shimmer()
+                        }
+                        
+                        Rectangle()
+                            .fill(Color(.systemGray6))
+                            .frame(width: 200, height: 16)
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                            .shimmer()
+                    }
+                    .padding(.horizontal)
+                    
+                    // Review Summary Skeleton
+                    HStack(spacing: 12) {
+                        Circle()
+                            .fill(Color(.systemGray6))
+                            .frame(width: 40, height: 40)
+                            .shimmer()
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Rectangle()
+                                .fill(Color(.systemGray6))
+                                .frame(width: 120, height: 16)
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                .shimmer()
+                            
+                            Rectangle()
+                                .fill(Color(.systemGray6))
+                                .frame(width: 80, height: 12)
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                .shimmer()
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+                .padding(.vertical)
             }
         }
         .navigationTitle(game.name)
